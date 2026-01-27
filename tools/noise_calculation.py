@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import random as r
-from scipy.integrate import quad,trapz
+from scipy.integrate import quad,trapezoid
 
 from tools.telescope import *
 
@@ -110,7 +110,7 @@ class noise:
             for arm in range(len(F_plus)):
                 #MM: check if indexing is correct. 
                 intfreq = [self.integrand(f,GWpars,specs,F_plus[arm],F_cross[arm],total_mass[ind],chirp_mass[ind],eta[ind],z,d_L) for f in freq]
-                rho_tot += 4*trapz(intfreq,dx=dfreq)
+                rho_tot += 4*trapezoid(intfreq,dx=dfreq)
 
             instrumental_noise[ind] = 2*d_L(z)/(np.sqrt(rho_tot))
 

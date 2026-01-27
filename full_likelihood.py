@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy
 from scipy.interpolate import interp1d
-from scipy.integrate import trapz
+from scipy.integrate import trapezoid
 
 from tools.theory import *
 
@@ -60,7 +60,7 @@ def DDRlike(omegam=0.314,A=1.,xi0=1.,Ga=0.,Gn=0.,M0=-19.5,model=1,use_GW=True,us
     for zi in z_range:
         zint  = np.linspace(0,zi,100)
         dz    = (zi-0.)/100
-        com.append(clight*trapz(1/hubble(zint),zint,dx=dz))
+        com.append(clight*trapezoid(1/hubble(zint),zint,dx=dz))
 
     comoving        = interp1d(z_range,com,kind='cubic')
     dA              = interp1d(z_range,com/(1+z),kind='cubic')

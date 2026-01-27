@@ -59,7 +59,7 @@ class mockchecker:
         plt.plot(self.x,self.fiducial,label=r'Fiducial',ls='-',color='#8E001C')
         plt.errorbar(self.x,self.data,yerr=self.error,label='data',ls='',marker='*',color='#FFB300')
         plt.errorbar(self.outliers['x'],self.outliers['data'],
-                     label=r' '+str(self.threshold)+'$\sigma$ outliers ('+str(100*len(self.outliers['x'])/len(self.x))+'% of total)',
+                     label=r' '+str(self.threshold)+r'$\sigma$ outliers ('+str(100*len(self.outliers['x'])/len(self.x))+'% of total)',
                      ls='',marker='x',markersize=10,color='black')
         plt.xlabel(r'$x$',fontsize=20)
         plt.ylabel(r'$y(x)$',fontsize=20)

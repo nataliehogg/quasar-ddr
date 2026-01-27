@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import random as r
-from scipy.integrate import quad,trapz
+from scipy.integrate import quad,trapezoid
 
 conv_fac=4.93*10**(-6.) #solar masses to seconds (who measures masses in seconds???)
 
@@ -60,13 +60,13 @@ class GWdist:
         if GWpars['merger_distribution'] == 'weighted':
            burst_rate = self.merger_rate(GWpars['merger_model'],z_range)
            unnorm   = (4*np.pi*(d_C(z_range)**2)*burst_rate)/(H(z_range)*(1+z_range))
-           integral = trapz(unnorm,dx=dz) 
+           integral = trapezoid(unnorm,dx=dz) 
            norm     = specs['GW_number']/integral
            finaldist= norm*unnorm
 
         if GWpars['merger_distribution'] == 'uniform':
            uniform  = (4*np.pi*(d_C(z_range)**2))/(H(z_range)*(1+z_range)) 
-           integral = trapz(uniform,dx=dz)
+           integral = trapezoid(uniform,dx=dz)
            norm     = specs['GW_number']/integral
            finaldist= norm*uniform
 
