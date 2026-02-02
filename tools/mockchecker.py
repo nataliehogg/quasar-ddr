@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import interp1d
 from scipy.stats import norm
 
 
-class mockchecker:
+class MockChecker:
 
     def __init__(self,x=None,data=None,error=None,fiducial=None,
                  threshold=None, visualize=False, dataname='test'):
