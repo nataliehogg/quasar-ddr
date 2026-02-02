@@ -31,7 +31,10 @@ class MockChecker:
 
     def histogram(self,name):
 
-        hist = np.array([(self.data[ind]-self.fiducial[ind])/self.error[ind] for ind in range(len(self.x))])
+        # NH: this issue of indexing the error array must be understood 
+
+        # hist = np.array([(self.data[ind]-self.fiducial[ind])/self.error[ind] for ind in range(len(self.x))])
+        hist = np.array([(self.data[ind]-self.fiducial[ind])/self.error for ind in range(len(self.x))])
 
         mu,sigma = norm.fit(hist)
         x = np.linspace(-10,10,100)
@@ -78,7 +81,8 @@ class MockChecker:
 
         outliers['x']        = np.array([self.x[idx] for idx, element in enumerate(distance) if condition(element)])
         outliers['data']     = np.array([self.data[idx] for idx, element in enumerate(distance) if condition(element)])
-        outliers['error']    = np.array([self.error[idx] for idx, element in enumerate(distance) if condition(element)])
+        # outliers['error']    = np.array([self.error[idx] for idx, element in enumerate(distance) if condition(element)])
+        outliers['error']    = np.array([self.error for idx, element in enumerate(distance) if condition(element)])
         outliers['distance'] = np.array([element for  element in distance if condition(element)])
 
         return outliers
@@ -87,6 +91,7 @@ class MockChecker:
 
 
     
+
 
 
 
