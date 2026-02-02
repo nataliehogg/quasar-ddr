@@ -27,7 +27,8 @@ class RingLuminosity:
         err_2 = 0.02*(clight/cosmoparams['H0'])
         err_3 = 0.12*(clight/cosmoparams['H0'])
 
-        self.error   = np.sqrt(err_1**2+err_2**2+err_3**2) # NH: this needs to be made more realistic
+        # NH: there must be a better way to get this shaped into the right size array
+        self.error = np.ones(len(self.redshifts))*np.sqrt(err_1**2+err_2**2+err_3**2) # NH: this needs to be made more realistic
 
         #Since we have only few points, checking here that the mock is "good"
         #Here we have lots of points, this should be useless
@@ -36,18 +37,18 @@ class RingLuminosity:
         count = 0
 
         while (np.abs(muGW)>0.01) or (np.abs(sdGW-1)>0.01):
-            #   hist = np.array([(self.data[ind]-d_L(zi))/self.error[ind] for ind,zi in enumerate(self.redshifts)])
-              self.data = [d_L(zi)+np.random.normal(loc=0.0, scale=self.error) for ind, zi in enumerate(self.redshifts)]
-              hist = np.array([(self.data[ind]-d_L(zi))/self.error for ind,zi in enumerate(self.redshifts)])
+              self.data = [d_L(zi)+np.random.normal(loc=0.0, scale=self.error[ind]) for ind, zi in enumerate(self.redshifts)]
+              hist = np.array([(self.data[ind]-d_L(zi))/self.error[ind] for ind,zi in enumerate(self.redshifts)])
               muGW, sdGW = norm.fit(hist)
               count += 1
 
-        # print('Saving mock to '+outpath+'_dl_dataset.txt')
+        print('Saving mock to '+outpath+'_dl_dataset.txt')
 
-        # np.savetxt(outpath+'_dl_dataset.txt', np.array([self.redshifts, 
-        #                                                 self.data,
-        #                                                 self.error]).T, 
-        #                                                 delimiter=' ')
+
+        np.savetxt(outpath+'_dl_dataset.txt', np.array([self.redshifts, 
+                                                        self.data,
+                                                        self.error]).T, 
+                                                        delimiter=' ')
 
     def mock(self):
 
