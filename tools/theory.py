@@ -21,7 +21,7 @@ class Theory:
         elif model == 'epspar':
            self.eta = (1+z)**A          
 
-    def EMlumdist(self):
+    def EMlumdist(self, eta):
 
         lumdist = self.H0/clight*(1+self.z)**2.*self.d_A(self.z)*self.eta
 
