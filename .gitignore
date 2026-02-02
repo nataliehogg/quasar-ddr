@@ -206,5 +206,4 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# mock data
-mock_data/
+
