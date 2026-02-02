@@ -22,7 +22,8 @@ class MockChecker:
 
         print('Number of outliers: '+str(len(self.outliers['x'])))
         print('Fraction of data: '+str(100*len(self.outliers['x'])/len(self.x))+'%')
-        if len(self.outliers['x'])>0: print('Maximum fistance from fiducial (in sigma): '+str(np.sort(self.outliers['distance'])[-1]))
+        if len(self.outliers['x'])>0: 
+            print('Maximum fistance from fiducial (in sigma): '+str(np.sort(self.outliers['distance'])[-1]))
 
 
         self.histogram(dataname)
