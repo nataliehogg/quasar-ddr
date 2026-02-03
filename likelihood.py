@@ -111,8 +111,13 @@ class DDRlike(Likelihood):
         TH = Theory(self.z_range, comoving, dA, hubble, Omegam, H0, A, xi0, EMmodel)
         luminosity_EM = TH.EMlumdist()
 
+        # Convert theoretical prediction to Mpc (to match mock data units)
+        # Mock generation does: d_L = (c/H0) * luminosity_distance(z)
+        # So we must apply the same conversion here
+        conversion_factor = SPEED_OF_LIGHT_KMS / H0  # Mpc
+
         # Compute chi-squared for luminosity distance
-        residuals_dL = (self.data_dl - luminosity_EM(self.z_dl)) / self.error_dl
+        residuals_dL = (self.data_dl - conversion_factor * luminosity_EM(self.z_dl)) / self.error_dl
         chi2dL = np.sum(residuals_dL**2)
 
         # Compute chi-squared for angular diameter distance
