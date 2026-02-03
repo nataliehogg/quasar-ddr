@@ -4,8 +4,37 @@ from scipy.stats import norm
 
 
 class MockChecker:
+    """
+    Validate and visualize mock data quality.
 
-    def __init__(self,x=None,data=None,error=None,fiducial=None,
+    This class performs quality checks on generated mock data by comparing
+    to fiducial model predictions, computing outliers, and creating diagnostic
+    plots to verify the data follows expected statistical distributions.
+
+    Parameters
+    ----------
+    x : array_like
+        Independent variable (e.g., redshift)
+    data : array_like
+        Mock data values
+    error : array_like or float
+        Observational errors (can be array or scalar)
+    fiducial : array_like
+        Fiducial model predictions
+    threshold : float
+        Outlier threshold in units of sigma
+    visualize : bool, optional
+        Whether to create visualizations (default: False)
+    dataname : str, optional
+        Name for plots and reports (default: 'test')
+
+    Attributes
+    ----------
+    outliers : dict
+        Dictionary containing outlier information
+    """
+
+    def __init__(self, x=None, data=None, error=None, fiducial=None,
                  threshold=None, visualize=False, dataname='test'):
 
         self.x         = x
@@ -22,8 +51,8 @@ class MockChecker:
 
         print('Number of outliers: '+str(len(self.outliers['x'])))
         print('Fraction of data: '+str(100*len(self.outliers['x'])/len(self.x))+'%')
-        if len(self.outliers['x'])>0: 
-            print('Maximum fistance from fiducial (in sigma): '+str(np.sort(self.outliers['distance'])[-1]))
+        if len(self.outliers['x'])>0:
+            print('Maximum distance from fiducial (in sigma): '+str(np.sort(self.outliers['distance'])[-1]))
 
 
         self.histogram(dataname)
