@@ -72,7 +72,7 @@ class Theory:
             self.eta = np.sqrt(1 / P)
         elif model == 'epspar':
             # Epsilon parameterization: power-law violation
-            self.eta = (1 + z)**A          
+            self.eta = A #(1 + z)**A          
 
     def EMlumdist(self):
         """
