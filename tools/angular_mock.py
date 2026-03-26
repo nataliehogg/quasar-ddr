@@ -1,13 +1,13 @@
 import numpy as np
 from scipy.stats import norm
 
-from .SMBH_specifications import SMBHSpecs
+from .QSO_specifications import QSOSpecs
 from .constants import SPEED_OF_LIGHT_KMS
 
 
-class RingSize:
+class QSOAngular:
     """
-    Generate mock angular diameter distance data from SMBH shadow observations.
+    Generate mock angular diameter distance data from QSO observations.
 
     This class creates synthetic datasets of angular diameter distances as
     would be measured from supermassive black hole shadow size observations.
@@ -22,7 +22,7 @@ class RingSize:
         Observation specifications with keys:
         - 'z_min': Minimum redshift
         - 'z_max': Maximum redshift
-        - 'n_SMBH': Number of SMBH observations
+        - 'n_QSO': Number of QSO observations
     z_in : array_like
         Input redshift array for interpolation
     outpath : str
@@ -33,7 +33,7 @@ class RingSize:
     Attributes
     ----------
     redshifts : array_like
-        Random redshift distribution for SMBH observations
+        Random redshift distribution for QSO observations
     data : array_like
         Mock angular diameter distance values in Mpc
     error : array_like
@@ -46,13 +46,13 @@ class RingSize:
 
     def __init__(self, cosmoparams, specifications, z_in, outpath, angular_distance):
 
-        print('Generating SMBH angular distance mock.')
+        print('Generating QSOS angular distance mock.')
 
         # Get the redshift distribution
-        self.redshifts = SMBHSpecs.redshift_distribution(specifications)
+        self.redshifts = QSOSpecs.redshift_distribution(specifications)
 
         # Error budget (in Mpc)
-        err_1 = 0.01 * (SPEED_OF_LIGHT_KMS / cosmoparams['H0'])
+        err_1 = 0.02 * (SPEED_OF_LIGHT_KMS / cosmoparams['H0'])
 
         # NH: as in the dL mock, this needs work
         self.error = np.ones(len(self.redshifts)) * np.sqrt(err_1**2)

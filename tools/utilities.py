@@ -7,7 +7,8 @@ class Utilities:
     MOCK_PATTERN = re.compile(
         r"^(?P<model>[A-Za-z0-9]+)"
         r"A(?P<A>[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)"
-        r"nSMBH(?P<nSMBH>\d+)"
+        r"B(?P<B>[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)"
+        r"nQSO(?P<nQSO>\d+)"
         r"_(?P<obs>da|dl)_dataset\.txt$",
         re.IGNORECASE,
     )
@@ -22,7 +23,9 @@ class Utilities:
             "model": data["model"],
             "A_str": data["A"],
             "A": float(data["A"]),
-            "n_SMBH": int(data["nSMBH"]),
+            "B_str": data["B"],
+            "B": float(data["B"]),
+            "n_QSO": int(data["nQSO"]),
             "obs": data["obs"].lower(),
         }
 
@@ -49,7 +52,8 @@ class Utilities:
         records, unmatched = Utilities.scan_mock_data(mock_dir)
         index = {}
         for record in records:
-            key = (record["model"], record["A_str"], record["n_SMBH"])
+            # Key now includes B_str
+            key = (record["model"], record["A_str"], record["B_str"], record["n_QSO"])
             entry = index.setdefault(key, {"da": None, "dl": None})
             entry[record["obs"]] = record["file"]
         return index, unmatched
@@ -58,14 +62,15 @@ class Utilities:
     def list_mock_datasets(mock_dir="mock_data"):
         index, unmatched = Utilities.get_mock_index(mock_dir)
         datasets = []
-        for i, ((model, A_str, n_SMBH), paths) in enumerate(sorted(index.items())):
+        for i, ((model, A_str, B_str, n_QSO), paths) in enumerate(sorted(index.items())):
             datasets.append(
                 {
                     "index": i,
                     "model": model,
                     "A": float(A_str),
-                    "n_SMBH": n_SMBH,
-                    "settings": f"{model}A{A_str}nSMBH{n_SMBH}",
+                    "B": float(B_str),
+                    "n_QSO": n_QSO,
+                    "settings": f"{model}A{A_str}B{B_str}nQSO{n_QSO}",
                 }
             )
         return datasets, unmatched
@@ -77,7 +82,7 @@ class Utilities:
             return
 
         for row in datasets:
-            print(f"[{row['index']}] {row['model']} A={row['A']} n_SMBH={row['n_SMBH']}")
+            print(f"[{row['index']}] {row['model']} A={row['A']} B={row['B']} n_QSO={row['n_QSO']}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -108,10 +113,11 @@ class Utilities:
             print("No matching mock datasets found.")
             return
 
-        for (model, A_str, n_SMBH), paths in sorted(index.items()):
+        for (model, A_str, B_str, n_QSO), paths in sorted(index.items()):
             da_path = paths.get("da")
             dl_path = paths.get("dl")
-            print(f"{model} A={A_str} n_SMBH={n_SMBH} | da: {da_path} | dl: {dl_path}")
+            # Fixed typo n_QSP -> n_QSO
+            print(f"{model} A={A_str} B={B_str} n_QSO={n_QSO} | da: {da_path} | dl: {dl_path}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -128,28 +134,32 @@ class Utilities:
         return {"z": data[:, 0], "value": data[:, 1], "error": data[:, 2]}
 
     @staticmethod
-    def _A_matches(A, A_str, A_float):
-        if isinstance(A, str):
-            return A == A_str
+    def _val_matches(val, val_str, val_float):
+        # Renamed from _A_matches to a generic _val_matches so it works for A and B
+        if isinstance(val, str):
+            return val == val_str
         try:
-            return math.isclose(float(A), A_float, rel_tol=1e-9, abs_tol=0.0)
+            return math.isclose(float(val), val_float, rel_tol=1e-9, abs_tol=0.0)
         except (TypeError, ValueError):
             return False
 
     @staticmethod
-    def load_mock_pair(model, A, n_SMBH, mock_dir="mock_data", index=None):
+    def load_mock_pair(model, A, B, n_QSO, mock_dir="mock_data", index=None):
         if index is None:
             index, _ = Utilities.get_mock_index(mock_dir)
 
         model_lower = str(model).lower()
-        target_n = int(n_SMBH)
+        target_n = int(n_QSO)
 
-        for (m, A_str, n), paths in index.items():
+        for (m, A_str, B_str, n), paths in index.items():
             if m.lower() != model_lower:
                 continue
             if n != target_n:
                 continue
-            if not Utilities._A_matches(A, A_str, float(A_str)):
+            if not Utilities._val_matches(A, A_str, float(A_str)):
+                continue
+            # Added check for B
+            if not Utilities._val_matches(B, B_str, float(B_str)):
                 continue
 
             out = {}

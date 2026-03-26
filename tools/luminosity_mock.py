@@ -2,13 +2,13 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 
-from .SMBH_specifications import SMBHSpecs
+from .QSO_specifications import QSOSpecs
 from .constants import SPEED_OF_LIGHT_KMS
 
 
-class RingLuminosity:
+class QSOLuminosity:
     """
-    Generate mock luminosity distance data from SMBH shadow observations.
+    Generate mock luminosity distance data from QSO observations.
 
     This class creates synthetic datasets of luminosity distances as would be
     measured from supermassive black hole photon ring observations. The mock
@@ -23,7 +23,7 @@ class RingLuminosity:
         Observation specifications with keys:
         - 'z_min': Minimum redshift
         - 'z_max': Maximum redshift
-        - 'n_SMBH': Number of SMBH observations
+        - 'n_QSO': Number of QSO observations
     z_in : array_like
         Input redshift array for interpolation
     outpath : str
@@ -34,7 +34,7 @@ class RingLuminosity:
     Attributes
     ----------
     redshifts : array_like
-        Random redshift distribution for SMBH observations
+        Random redshift distribution for Q observations
     data : array_like
         Mock luminosity distance values in Mpc
     error : array_like
@@ -51,17 +51,17 @@ class RingLuminosity:
 
     def __init__(self, cosmoparams, specifications, z_in, outpath, luminosity_distance):
 
-        print('Generating SMBH luminosity distance mock.')
+        print('Generating QSO luminosity distance mock.')
 
         # Get the redshift distribution
-        self.redshifts = SMBHSpecs.redshift_distribution(specifications)
+        self.redshifts = QSOSpecs.redshift_distribution(specifications)
 
         # Convert to proper units (Mpc)
         d_L = interp1d(z_in, SPEED_OF_LIGHT_KMS / cosmoparams['H0'] * luminosity_distance(z_in))
 
-        err_1 = 0.01 * (SPEED_OF_LIGHT_KMS / cosmoparams['H0'])
-        err_2 = 0.02 * (SPEED_OF_LIGHT_KMS / cosmoparams['H0'])
-        err_3 = 0.12 * (SPEED_OF_LIGHT_KMS / cosmoparams['H0'])
+        err_1 = 0.1 * (SPEED_OF_LIGHT_KMS / cosmoparams['H0'])
+        err_2 = 0.1 * (SPEED_OF_LIGHT_KMS / cosmoparams['H0'])
+        err_3 = 0.1 * (SPEED_OF_LIGHT_KMS / cosmoparams['H0'])
 
         # NH: there must be a better way to get this shaped into the right size array
         self.error = np.ones(len(self.redshifts)) * np.sqrt(err_1**2 + err_2**2 + err_3**2)

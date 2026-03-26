@@ -30,10 +30,12 @@ class Theory:
         Hubble constant in km/s/Mpc
     A : float
         DDR violation amplitude parameter
+    B : float
+        DDR violation linear term parameter
     xi0 : float
         DDR violation transition scale parameter
     model : str
-        Model type: 'coherent', 'incoherent', or 'epspar'
+        Model type: 'coherent', 'incoherent', 'epspar', 'M1', 'M2', 'M3'
 
     Attributes
     ----------
@@ -47,10 +49,10 @@ class Theory:
         DDR violation factor eta(z)
     """
 
-    def __init__(self, z, d_C, d_A, H, Om, H0, A, xi0, model):
+    def __init__(self, z, d_C, d_A, H, Om, H0, A, B, xi0, model):
 
         # Validate model type
-        valid_models = ['coherent', 'incoherent', 'epspar']
+        valid_models = ['coherent', 'incoherent', 'epspar', 'M1', 'M2', 'M3']
         if model not in valid_models:
             raise ValueError(
                 f"Invalid model type '{model}'. "
@@ -72,7 +74,32 @@ class Theory:
             self.eta = np.sqrt(1 / P)
         elif model == 'epspar':
             # Epsilon parameterization: power-law violation
-            self.eta = A #(1 + z)**A          
+            self.eta = A #(1 + z)**A   
+        elif model == 'M1':
+            # Model 1: constant DDR violation 
+            self.eta = 1 + A
+        elif model == 'M2':
+            # Model 2: linear DDR violation
+            self.eta = 1 + A + B*z
+        elif model == 'M3':
+            # Model 3: power-law DDR violation
+            self.eta = (1+z)**A 
+        
+        """
+        elif model == 'M1*':
+            # Model 1: constant DDR violation with transition at z*
+            if (z < 1090):
+            	self.eta = 1 + A
+            else: 
+            	self.eta = 1 + B
+        elif model == 'M3*'
+            # Model 3: power-law DDR violation with transition at z*
+            if (z < 1090):
+            	self.eta = (1+z)**A
+            else: 
+                self.eta = (1+z)**B  
+        """
+         
 
     def EMlumdist(self):
         """

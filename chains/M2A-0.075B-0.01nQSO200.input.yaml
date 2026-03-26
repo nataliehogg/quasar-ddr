@@ -1,0 +1,41 @@
+likelihood:
+  DDRlike:
+    external: !!python/name:likelihood.DDRlike ''
+    model: M2
+    datapath: ./mock_data/M2A-0.075B-0.01nQSO200
+params:
+  A:
+    prior:
+      min: -0.2
+      max: 0.2
+    ref:
+      dist: norm
+      loc: -0.075
+      scale: 0.1
+    proposal: 0.05
+    latex: A
+  B:
+    prior:
+      min: -0.1
+      max: 0.1
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.05
+    proposal: 0.005
+    latex: B
+  sigma_int:
+    prior:
+      min: 0.0
+      max: 0.5
+    ref:
+      dist: norm
+      loc: 0.2
+      scale: 0.05
+    proposal: 0.02
+    latex: \sigma_{\rm int}
+sampler:
+  mcmc:
+    max_tries: 10000
+    Rminus1_stop: 0.1
+output: M2A-0.075B-0.01nQSO200
