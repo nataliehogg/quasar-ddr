@@ -1,12 +1,12 @@
 import numpy as np
 
 
-class SMBHSpecs:
+class QSOSpecs:
     """
-    Specifications for SMBH shadow observations.
+    Specifications for QSO observations.
 
     This class provides utilities for generating observation specifications
-    for supermassive black hole shadow/photon ring surveys.
+    for QSO surveys.
     """
 
     @staticmethod
@@ -20,7 +20,7 @@ class SMBHSpecs:
             Specifications dictionary with keys:
             - 'z_min': Minimum redshift
             - 'z_max': Maximum redshift
-            - 'n_SMBH': Number of SMBH observations
+            - 'n_QSO': Number of QSO observations
 
         Returns
         -------
@@ -31,12 +31,14 @@ class SMBHSpecs:
         -----
         Currently uses uniform random distribution. This should be updated
         to use a physically motivated redshift distribution based on
-        expected SMBH survey selection functions.
+        expected QSO survey selection functions.
+        
         """
+        
         redshifts = np.random.uniform(
             specs['z_min'],
             specs['z_max'],
-            specs['n_SMBH']
+            specs['n_QSO']
         )
-
+        
         return redshifts

@@ -2,13 +2,13 @@ import math
 import re
 from pathlib import Path
 
-
 class Utilities:
     MOCK_PATTERN = re.compile(
-        r"^(?P<model>[A-Za-z0-9]+)"
-        r"A(?P<A>[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)"
-        r"nSMBH(?P<nSMBH>\d+)"
-        r"_(?P<obs>da|dl)_dataset\.txt$",
+        r"^(?P<model>.+?)"                                     # Non-greedy match for the model name
+        r"alpha(?P<alpha>[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"     # Matches the alpha float
+        r"beta(?P<beta>[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"       # Matches the beta float
+        r"nQSO(?P<nQSO>\d+)"                                   # Matches the nQSO integer
+        r"_(?P<obs>da|dl)_dataset\.txt\s*$",                   # Matches the observation type and extension
         re.IGNORECASE,
     )
 
@@ -20,11 +20,14 @@ class Utilities:
         data = match.groupdict()
         return {
             "model": data["model"],
-            "A_str": data["A"],
-            "A": float(data["A"]),
-            "n_SMBH": int(data["nSMBH"]),
+            "alpha_str": data["alpha"],
+            "alpha": float(data["alpha"]),
+            "beta_str": data["beta"],
+            "beta": float(data["beta"]),
+            "n_QSO": int(data["nQSO"]),
             "obs": data["obs"].lower(),
         }
+
 
     @staticmethod
     def scan_mock_data(mock_dir="mock_data"):
@@ -49,7 +52,8 @@ class Utilities:
         records, unmatched = Utilities.scan_mock_data(mock_dir)
         index = {}
         for record in records:
-            key = (record["model"], record["A_str"], record["n_SMBH"])
+            # Key updated to use alpha/beta strings
+            key = (record["model"], record["alpha_str"], record["beta_str"], record["n_QSO"])
             entry = index.setdefault(key, {"da": None, "dl": None})
             entry[record["obs"]] = record["file"]
         return index, unmatched
@@ -58,14 +62,15 @@ class Utilities:
     def list_mock_datasets(mock_dir="mock_data"):
         index, unmatched = Utilities.get_mock_index(mock_dir)
         datasets = []
-        for i, ((model, A_str, n_SMBH), paths) in enumerate(sorted(index.items())):
+        for i, ((model, alpha_str, beta_str, n_QSO), paths) in enumerate(sorted(index.items())):
             datasets.append(
                 {
                     "index": i,
                     "model": model,
-                    "A": float(A_str),
-                    "n_SMBH": n_SMBH,
-                    "settings": f"{model}A{A_str}nSMBH{n_SMBH}",
+                    "alpha": float(alpha_str),
+                    "beta": float(beta_str),
+                    "n_QSO": n_QSO,
+                    "settings": f"{model}alpha{alpha_str}beta{beta_str}nQSO{n_QSO}",
                 }
             )
         return datasets, unmatched
@@ -77,7 +82,7 @@ class Utilities:
             return
 
         for row in datasets:
-            print(f"[{row['index']}] {row['model']} A={row['A']} n_SMBH={row['n_SMBH']}")
+            print(f"[{row['index']}] {row['model']} α={row['alpha']} β={row['beta']} n_QSO={row['n_QSO']}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -108,10 +113,10 @@ class Utilities:
             print("No matching mock datasets found.")
             return
 
-        for (model, A_str, n_SMBH), paths in sorted(index.items()):
+        for (model, alpha_str, beta_str, n_QSO), paths in sorted(index.items()):
             da_path = paths.get("da")
             dl_path = paths.get("dl")
-            print(f"{model} A={A_str} n_SMBH={n_SMBH} | da: {da_path} | dl: {dl_path}")
+            print(f"{model} α={alpha_str} β={beta_str} n_QSO={n_QSO} | da: {da_path} | dl: {dl_path}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -121,35 +126,36 @@ class Utilities:
     @staticmethod
     def load_mock_dataset(path):
         import numpy as np
-
         data = np.loadtxt(path)
         if data.ndim == 1:
             data = data.reshape(1, -1)
         return {"z": data[:, 0], "value": data[:, 1], "error": data[:, 2]}
 
     @staticmethod
-    def _A_matches(A, A_str, A_float):
-        if isinstance(A, str):
-            return A == A_str
+    def _val_matches(val, val_str, val_float):
+        if isinstance(val, str):
+            return val == val_str
         try:
-            return math.isclose(float(A), A_float, rel_tol=1e-9, abs_tol=0.0)
+            return math.isclose(float(val), val_float, rel_tol=1e-9, abs_tol=0.0)
         except (TypeError, ValueError):
             return False
 
     @staticmethod
-    def load_mock_pair(model, A, n_SMBH, mock_dir="mock_data", index=None):
+    def load_mock_pair(model, alpha, beta, n_QSO, mock_dir="mock_data", index=None):
         if index is None:
             index, _ = Utilities.get_mock_index(mock_dir)
 
         model_lower = str(model).lower()
-        target_n = int(n_SMBH)
+        target_n = int(n_QSO)
 
-        for (m, A_str, n), paths in index.items():
+        for (m, alpha_str, beta_str, n), paths in index.items():
             if m.lower() != model_lower:
                 continue
             if n != target_n:
                 continue
-            if not Utilities._A_matches(A, A_str, float(A_str)):
+            if not Utilities._val_matches(alpha, alpha_str, float(alpha_str)):
+                continue
+            if not Utilities._val_matches(beta, beta_str, float(beta_str)):
                 continue
 
             out = {}
