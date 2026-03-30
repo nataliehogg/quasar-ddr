@@ -49,7 +49,7 @@ class Theory:
         DDR violation factor eta(z)
     """
 
-    def __init__(self, z, d_C, d_A, H, Om, H0, A, B, xi0, model):
+    def __init__(self, z, d_C, d_A, H, Om, H0, alpha, beta, xi0, model):
 
         # Validate model type
         valid_models = ['coherent', 'incoherent', 'epspar', 'M1', 'M2', 'M3']
@@ -62,30 +62,21 @@ class Theory:
         self.z = z
         self.d_A = d_A
         self.H0 = H0
-
+	
+	
         # Compute DDR violation factor eta(z) based on model
-        if model == 'coherent':
-            # Coherent model: violation depends on Hubble parameter deviation
-            P = A + (1 - A) * np.exp(-(H(z) - H0) / (Om * H0) * xi0)
-            self.eta = np.sqrt(1 / P)
-        elif model == 'incoherent':
-            # Incoherent model: violation depends on comoving distance
-            P = A + (1 - A) * np.exp((-3/2) * (H0 / SPEED_OF_LIGHT_KMS) * d_C(z) * xi0)
-            self.eta = np.sqrt(1 / P)
-        elif model == 'epspar':
-            # Epsilon parameterization: power-law violation
-            self.eta = A #(1 + z)**A   
-        elif model == 'M1':
+        if model == 'M1':
             # Model 1: constant DDR violation 
-            self.eta = 1 + A
+            self.eta = 1 + alpha
         elif model == 'M2':
             # Model 2: linear DDR violation
-            self.eta = 1 + A + B*z
+            self.eta = 1 + alpha + beta*z
         elif model == 'M3':
             # Model 3: power-law DDR violation
-            self.eta = (1+z)**A 
+            self.eta = (1+z)**alpha 
         
         """
+        If we let the z of transition to be a free parameter of the model we could also use these models
         elif model == 'M1*':
             # Model 1: constant DDR violation with transition at z*
             if (z < 1090):

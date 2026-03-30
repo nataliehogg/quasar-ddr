@@ -2,14 +2,13 @@ import math
 import re
 from pathlib import Path
 
-
 class Utilities:
     MOCK_PATTERN = re.compile(
-        r"^(?P<model>[A-Za-z0-9]+)"
-        r"A(?P<A>[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)"
-        r"B(?P<B>[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)"
-        r"nQSO(?P<nQSO>\d+)"
-        r"_(?P<obs>da|dl)_dataset\.txt$",
+        r"^(?P<model>.+?)"                                     # Non-greedy match for the model name
+        r"alpha(?P<alpha>[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"     # Matches the alpha float
+        r"beta(?P<beta>[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"       # Matches the beta float
+        r"nQSO(?P<nQSO>\d+)"                                   # Matches the nQSO integer
+        r"_(?P<obs>da|dl)_dataset\.txt\s*$",                   # Matches the observation type and extension
         re.IGNORECASE,
     )
 
@@ -21,13 +20,14 @@ class Utilities:
         data = match.groupdict()
         return {
             "model": data["model"],
-            "A_str": data["A"],
-            "A": float(data["A"]),
-            "B_str": data["B"],
-            "B": float(data["B"]),
+            "alpha_str": data["alpha"],
+            "alpha": float(data["alpha"]),
+            "beta_str": data["beta"],
+            "beta": float(data["beta"]),
             "n_QSO": int(data["nQSO"]),
             "obs": data["obs"].lower(),
         }
+
 
     @staticmethod
     def scan_mock_data(mock_dir="mock_data"):
@@ -52,8 +52,8 @@ class Utilities:
         records, unmatched = Utilities.scan_mock_data(mock_dir)
         index = {}
         for record in records:
-            # Key now includes B_str
-            key = (record["model"], record["A_str"], record["B_str"], record["n_QSO"])
+            # Key updated to use alpha/beta strings
+            key = (record["model"], record["alpha_str"], record["beta_str"], record["n_QSO"])
             entry = index.setdefault(key, {"da": None, "dl": None})
             entry[record["obs"]] = record["file"]
         return index, unmatched
@@ -62,15 +62,15 @@ class Utilities:
     def list_mock_datasets(mock_dir="mock_data"):
         index, unmatched = Utilities.get_mock_index(mock_dir)
         datasets = []
-        for i, ((model, A_str, B_str, n_QSO), paths) in enumerate(sorted(index.items())):
+        for i, ((model, alpha_str, beta_str, n_QSO), paths) in enumerate(sorted(index.items())):
             datasets.append(
                 {
                     "index": i,
                     "model": model,
-                    "A": float(A_str),
-                    "B": float(B_str),
+                    "alpha": float(alpha_str),
+                    "beta": float(beta_str),
                     "n_QSO": n_QSO,
-                    "settings": f"{model}A{A_str}B{B_str}nQSO{n_QSO}",
+                    "settings": f"{model}alpha{alpha_str}beta{beta_str}nQSO{n_QSO}",
                 }
             )
         return datasets, unmatched
@@ -82,7 +82,7 @@ class Utilities:
             return
 
         for row in datasets:
-            print(f"[{row['index']}] {row['model']} A={row['A']} B={row['B']} n_QSO={row['n_QSO']}")
+            print(f"[{row['index']}] {row['model']} α={row['alpha']} β={row['beta']} n_QSO={row['n_QSO']}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -113,11 +113,10 @@ class Utilities:
             print("No matching mock datasets found.")
             return
 
-        for (model, A_str, B_str, n_QSO), paths in sorted(index.items()):
+        for (model, alpha_str, beta_str, n_QSO), paths in sorted(index.items()):
             da_path = paths.get("da")
             dl_path = paths.get("dl")
-            # Fixed typo n_QSP -> n_QSO
-            print(f"{model} A={A_str} B={B_str} n_QSO={n_QSO} | da: {da_path} | dl: {dl_path}")
+            print(f"{model} α={alpha_str} β={beta_str} n_QSO={n_QSO} | da: {da_path} | dl: {dl_path}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -127,7 +126,6 @@ class Utilities:
     @staticmethod
     def load_mock_dataset(path):
         import numpy as np
-
         data = np.loadtxt(path)
         if data.ndim == 1:
             data = data.reshape(1, -1)
@@ -135,7 +133,6 @@ class Utilities:
 
     @staticmethod
     def _val_matches(val, val_str, val_float):
-        # Renamed from _A_matches to a generic _val_matches so it works for A and B
         if isinstance(val, str):
             return val == val_str
         try:
@@ -144,22 +141,21 @@ class Utilities:
             return False
 
     @staticmethod
-    def load_mock_pair(model, A, B, n_QSO, mock_dir="mock_data", index=None):
+    def load_mock_pair(model, alpha, beta, n_QSO, mock_dir="mock_data", index=None):
         if index is None:
             index, _ = Utilities.get_mock_index(mock_dir)
 
         model_lower = str(model).lower()
         target_n = int(n_QSO)
 
-        for (m, A_str, B_str, n), paths in index.items():
+        for (m, alpha_str, beta_str, n), paths in index.items():
             if m.lower() != model_lower:
                 continue
             if n != target_n:
                 continue
-            if not Utilities._val_matches(A, A_str, float(A_str)):
+            if not Utilities._val_matches(alpha, alpha_str, float(alpha_str)):
                 continue
-            # Added check for B
-            if not Utilities._val_matches(B, B_str, float(B_str)):
+            if not Utilities._val_matches(beta, beta_str, float(beta_str)):
                 continue
 
             out = {}
