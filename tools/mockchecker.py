@@ -58,7 +58,6 @@ class MockChecker:
         self.histogram(dataname)
         self.plot_mock(dataname)
 
-
     def histogram(self,name):
 
         hist = np.array([(self.data[ind]-self.fiducial[ind])/self.error[ind] for ind in range(len(self.x))])
@@ -93,12 +92,14 @@ class MockChecker:
         plt.plot(np.asarray(self.x)[order],np.asarray(self.fiducial)[order],label=r'Fiducial',ls='-',color='#8E001C')
         plt.errorbar(self.x,self.data,yerr=self.error,label='data',ls='',marker='*',color='#FFB300')
         plt.errorbar(self.outliers['x'],self.outliers['data'],
-                     label=r' '+str(self.threshold)+r'$\sigma$ outliers ('+str(100*len(self.outliers['x'])/len(self.x))+'% of total)',
+                     label=r' '+str(self.threshold)+r'$\sigma$ outliers ('+str(100*len(self.outliers['x'])/len(self.x))+r'\% of total)',
                      ls='',marker='x',markersize=10,color='black')
         plt.xlabel(r'$x$',fontsize=20)
         plt.ylabel(r'$y(x)$',fontsize=20)
         plt.legend(bbox_to_anchor=(1.04,0.5), loc="center left",fontsize=20)
         plt.show()
+
+        return None
 
 
         
