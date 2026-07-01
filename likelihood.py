@@ -54,7 +54,6 @@ class DDRlike(Likelihood):
             H0=None, 
             alpha=alpha, 
             beta=beta,   
-            xi0=1.0, 
             model=self.EMmodel
         )
         eta_th = TH.eta
