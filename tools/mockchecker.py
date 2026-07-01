@@ -61,10 +61,7 @@ class MockChecker:
 
     def histogram(self,name):
 
-        # NH: this issue of indexing the error array must be understood 
-
-        # hist = np.array([(self.data[ind]-self.fiducial[ind])/self.error[ind] for ind in range(len(self.x))])
-        hist = np.array([(self.data[ind]-self.fiducial[ind])/self.error for ind in range(len(self.x))])
+        hist = np.array([(self.data[ind]-self.fiducial[ind])/self.error[ind] for ind in range(len(self.x))])
 
         mu,sigma = norm.fit(hist)
         x = np.linspace(-10,10,100)
@@ -86,9 +83,14 @@ class MockChecker:
 
     def plot_mock(self,name):
 
+        # Sort by x so the fiducial line connects points in redshift order
+        # (self.x from the mock generator is unsorted, which otherwise draws
+        # the smooth fiducial as a tangle of back-and-forth segments).
+        order = np.argsort(self.x)
+
         plt.figure(figsize=(10, 8))
         plt.title(name+' mock',fontsize=20)
-        plt.plot(self.x,self.fiducial,label=r'Fiducial',ls='-',color='#8E001C')
+        plt.plot(np.asarray(self.x)[order],np.asarray(self.fiducial)[order],label=r'Fiducial',ls='-',color='#8E001C')
         plt.errorbar(self.x,self.data,yerr=self.error,label='data',ls='',marker='*',color='#FFB300')
         plt.errorbar(self.outliers['x'],self.outliers['data'],
                      label=r' '+str(self.threshold)+r'$\sigma$ outliers ('+str(100*len(self.outliers['x'])/len(self.x))+'% of total)',
@@ -111,8 +113,7 @@ class MockChecker:
 
         outliers['x']        = np.array([self.x[idx] for idx, element in enumerate(distance) if condition(element)])
         outliers['data']     = np.array([self.data[idx] for idx, element in enumerate(distance) if condition(element)])
-        # outliers['error']    = np.array([self.error[idx] for idx, element in enumerate(distance) if condition(element)])
-        outliers['error']    = np.array([self.error for idx, element in enumerate(distance) if condition(element)])
+        outliers['error']    = np.array([self.error[idx] for idx, element in enumerate(distance) if condition(element)])
         outliers['distance'] = np.array([element for  element in distance if condition(element)])
 
         return outliers
