@@ -27,12 +27,10 @@ class Theory:
         Matter density parameter Omega_m
     H0 : float
         Hubble constant in km/s/Mpc
-    A : float
+    alpha : float
         DDR violation amplitude parameter
-    B : float
+    beta : float
         DDR violation linear term parameter
-    xi0 : float
-        DDR violation transition scale parameter
     model : str
         Model type: 'M1', 'M2', 'M3'
 
