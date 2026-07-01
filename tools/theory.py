@@ -1,4 +1,3 @@
-import numpy as np
 from scipy.interpolate import interp1d
 
 from .constants import SPEED_OF_LIGHT_KMS
@@ -10,9 +9,9 @@ class Theory:
 
     This class implements three different models for Distance Duality Relation
     (DDR) violations in the electromagnetic sector:
-    - 'coherent': Violation depends on Hubble parameter deviation
-    - 'incoherent': Violation depends on comoving distance
-    - 'epspar': Power-law violation parameterization
+     - M1: constant DDR violation, eta = 1 + alpha
+     - M2: linear DDR violation, eta = 1 + alpha + beta*z
+     - M3: power law DDR violation, eta = (1+z)**alpha
 
     Parameters
     ----------
@@ -35,7 +34,7 @@ class Theory:
     xi0 : float
         DDR violation transition scale parameter
     model : str
-        Model type: 'coherent', 'incoherent', 'epspar', 'M1', 'M2', 'M3'
+        Model type: 'M1', 'M2', 'M3'
 
     Attributes
     ----------
@@ -52,7 +51,7 @@ class Theory:
     def __init__(self, z, d_C, d_A, H, Om, H0, alpha, beta, xi0, model):
 
         # Validate model type
-        valid_models = ['coherent', 'incoherent', 'epspar', 'M1', 'M2', 'M3']
+        valid_models = ['M1', 'M2', 'M3']
         if model not in valid_models:
             raise ValueError(
                 f"Invalid model type '{model}'. "
