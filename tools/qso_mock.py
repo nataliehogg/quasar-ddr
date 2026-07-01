@@ -11,7 +11,9 @@ class QSOMockGenerator:
     Generate synchronized mock luminosity and angular diameter distance data.
     """
 
-    def __init__(self, cosmoparams, specifications, z_in, outpath, dl_func, da_func):
+    def __init__(self, cosmoparams, specifications, z_in, outpath, dl_func, da_func, 
+                 sigma_uvx_fid=0.05, beta_dl_meas=0.05,
+                 sigma_sarm_fid=0.05, beta_da_meas=0.05):
         print('Generating synchronized QSO mock datasets.')
 
         # 1. Generate a SINGLE redshift distribution for both
@@ -22,14 +24,16 @@ class QSOMockGenerator:
         # 2. Setup theoretical functions and errors
         # Luminosity Distance setup
         self.dl_theoretical = interp1d(z_in, hubble_dist * dl_func(z_in))
-        dl_err_comp = 0.1 * hubble_dist
-        self.dl_error = np.full(n_points, np.sqrt(3 * dl_err_comp**2))
+        dl_err_meas = beta_dl_meas * (hubble_dist*dl_func(self.redshifts))
+        dl_err_intrinsic = sigma_uvx_fid * (hubble_dist*dl_func(self.redshifts))
+        self.dl_error = np.full(n_points, np.sqrt(dl_err_meas**2 + dl_err_intrinsic**2))
 
         # Angular Distance setup
         # Note: assuming da_func already returns Mpc or is handled similarly
         self.da_theoretical = da_func 
-        da_err_comp = 0.02 * hubble_dist
-        self.da_error = np.full(n_points, da_err_comp)
+        da_err_meas = beta_da_meas * da_func(self.redshifts)
+        da_err_intrinsic = sigma_sarm_fid * da_func(self.redshifts)
+        self.da_error = np.full(n_points, np.sqrt(da_err_meas**2 + da_err_intrinsic**2))
 
         # 3. Unified Validation Loop
         # We ensure BOTH datasets pass the N(0,1) residual test
