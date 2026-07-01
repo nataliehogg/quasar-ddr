@@ -179,3 +179,74 @@ class Utilities:
                 if paths.get(obs):
                     out[key][obs] = Utilities.load_mock_dataset(paths[obs])
         return out
+
+    # DDR model -> parameters that actually enter eta(z) and should be sampled
+    MODEL_PARAMS = {"M1": ["alpha"], "M2": ["alpha", "beta"], "M3": ["alpha"]}
+
+    # Fixed prior / proposal / reference-width template, shared by all runs.
+    # ref_scale sets the spread of the walker starting points.
+    PARAM_TEMPLATE = {
+        "alpha":     {"prior": {"min": -0.2, "max": 0.2}, "proposal": 0.05,  "ref_scale": 0.1,  "latex": r"\alpha"},
+        "beta":      {"prior": {"min": -0.1, "max": 0.1}, "proposal": 0.005, "ref_scale": 0.05, "latex": r"\beta"},
+        "sigma_int": {"prior": {"min": 0.0,  "max": 0.5}, "proposal": 0.02,  "ref_scale": 0.05, "latex": r"\sigma_{\rm int}"},
+    }
+
+    @staticmethod
+    def sampler_config(dataset, likelihood, sample_sigma_int=True):
+        """
+        Build a Cobaya `info` dictionary for sampling a mock dataset.
+
+        Priors and MCMC settings are fixed; only the set of sampled parameters
+        varies with the DDR violation model (M1/M3: alpha; M2: alpha, beta).
+        sigma_int is appended when `sample_sigma_int` is True. Walker starting
+        points (`ref`) are seeded at the injected fiducial truth where it is
+        known (alpha, beta from the dataset); sigma_int has no injected truth,
+        so it starts at a small interior value rather than at the prior edge.
+
+        Parameters
+        ----------
+        dataset : dict
+            A dataset record from `select_mock_dataset` / `list_mock_datasets`,
+            providing 'model', 'alpha', 'beta' and 'settings'.
+        likelihood : class
+            The Cobaya likelihood class (e.g. DDRlike). Its __name__ is used as
+            the likelihood key.
+        sample_sigma_int : bool, optional
+            Whether to sample the intrinsic-scatter nuisance parameter.
+
+        Returns
+        -------
+        dict
+            A Cobaya `info` dictionary ready to pass to `cobaya.run.run`.
+        """
+        names = list(Utilities.MODEL_PARAMS[dataset["model"]])
+        if sample_sigma_int:
+            names.append("sigma_int")
+
+        ref_truth = {
+            "alpha": dataset["alpha"],
+            "beta": dataset["beta"],
+            "sigma_int": 0.1,  # no injected truth; start inside the prior
+        }
+
+        params = {}
+        for name in names:
+            spec = dict(Utilities.PARAM_TEMPLATE[name])
+            ref_scale = spec.pop("ref_scale")
+            spec["ref"] = {"dist": "norm", "loc": ref_truth[name], "scale": ref_scale}
+            params[name] = spec
+
+        return {
+            "params": params,
+            "sampler": {"mcmc": {"max_tries": 10000, "Rminus1_stop": 0.1}},
+            "likelihood": {
+                likelihood.__name__: {
+                    "external": likelihood,
+                    "model": dataset["model"],
+                    "datapath": "./mock_data/" + dataset["settings"],
+                    "sample_sigma_int": sample_sigma_int,
+                }
+            },
+            "output": "chains/" + dataset["settings"],
+            "force": True,
+        }

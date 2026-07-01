@@ -1,26 +1,26 @@
 import numpy as np
 from cobaya.likelihood import Likelihood
 
-# Import your Theory class
 from tools.theory import Theory
+from tools.utilities import Utilities
 
 class DDRlike(Likelihood):
     """
-    Cosmology-independent Cobaya likelihood for Distance Duality Relation 
+    Cosmology-independent Cobaya likelihood for Distance Duality Relation
     (DDR) violation constraints using alpha and beta parameters.
     """
     datapath: str = './mock_data/test'
-    model: int = 4  # Defaulting to 4 (M1)
+    model: str = 'M1'  # DDR violation model: 'M1', 'M2' or 'M3'
+    sample_sigma_int: bool = True  # whether sigma_int is sampled (must match the config)
 
     def initialize(self):
         """Load mock data and identify model selection once at startup."""
-        
-        # Identify model selection for the Theory class
-        model_map = {1: 'M1', 2: 'M2', 3: 'M3'}
-        self.EMmodel = model_map.get(self.model, 'M1')
-        
+
+        # Model string is passed straight to Theory, which validates it
+        self.EMmodel = self.model
+
         # This print statement will only appear once when Cobaya starts
-        print(f"--- [DDRlike] Model Selected: {self.EMmodel} (ID: {self.model}) ---")
+        print(f"--- [DDRlike] Model Selected: {self.EMmodel} ---")
         print(f"[DDRlike] Loading data from: {self.datapath}")
 
         # Load mock data
@@ -38,8 +38,16 @@ class DDRlike(Likelihood):
         self.stat_error_eta = self.eta_obs * np.sqrt((self.error_dl / self.dl)**2 + (self.error_da / self.da)**2)
 
     def get_requirements(self):
-        """Specify alpha and beta as required parameters from Cobaya."""
-        return {'alpha': None, 'beta': None, 'sigma_int': None}
+        """Require only the parameters this model actually samples.
+
+        Uses the same MODEL_PARAMS mapping as Utilities.sampler_config, so the
+        required parameters always match those declared in the config (M1/M3:
+        alpha; M2: alpha, beta), plus sigma_int when it is being sampled.
+        """
+        names = list(Utilities.MODEL_PARAMS[self.model])
+        if self.sample_sigma_int:
+            names.append('sigma_int')
+        return {name: None for name in names}
 
     def logp(self, alpha=0, beta=0, sigma_int=0, **params_values):
         """Compute log-likelihood for DDR parameters alpha/beta and intrinsic scatter."""
