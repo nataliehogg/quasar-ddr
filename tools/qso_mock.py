@@ -20,14 +20,15 @@ class QSOMockGenerator:
         hubble_dist = SPEED_OF_LIGHT_KMS / cosmoparams['H0']
 
         # 2. Setup theoretical functions and errors
+        # Both dl_func and da_func return distances in Mpc, so they are used
+        # as-is. hubble_dist (c/H0, in Mpc) only sets the absolute error scale.
         # Luminosity Distance setup
-        self.dl_theoretical = interp1d(z_in, hubble_dist * dl_func(z_in))
+        self.dl_theoretical = interp1d(z_in, dl_func(z_in))
         dl_err_comp = 0.1 * hubble_dist
         self.dl_error = np.full(n_points, np.sqrt(3 * dl_err_comp**2))
 
         # Angular Distance setup
-        # Note: assuming da_func already returns Mpc or is handled similarly
-        self.da_theoretical = da_func 
+        self.da_theoretical = da_func
         da_err_comp = 0.02 * hubble_dist
         self.da_error = np.full(n_points, da_err_comp)
 

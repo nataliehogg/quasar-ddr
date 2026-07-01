@@ -1,7 +1,5 @@
 from scipy.interpolate import interp1d
 
-from .constants import SPEED_OF_LIGHT_KMS
-
 
 class Theory:
     """
@@ -104,11 +102,12 @@ class Theory:
         Notes
         -----
         The modified luminosity distance is:
-        d_L^EM(z) = (H0/c) * (1+z)^2 * d_A(z) * eta(z)
+        d_L^EM(z) = (1+z)^2 * d_A(z) * eta(z)
 
-        where eta(z) encodes the DDR violation.
+        where eta(z) encodes the DDR violation. Both d_A and the returned
+        d_L^EM are in Mpc.
         """
-        lumdist = self.H0 / SPEED_OF_LIGHT_KMS * (1 + self.z)**2 * self.d_A(self.z) * self.eta
+        lumdist = (1 + self.z)**2 * self.d_A(self.z) * self.eta
 
         return interp1d(self.z, lumdist, kind='cubic')
 
