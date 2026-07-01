@@ -46,7 +46,7 @@ class Theory:
         DDR violation factor eta(z)
     """
 
-    def __init__(self, z, d_C, d_A, H, Om, H0, alpha, beta, xi0, model):
+    def __init__(self, z, d_C, d_A, H, Om, H0, alpha, beta, model):
 
         # Validate model type
         valid_models = ['M1', 'M2', 'M3']
