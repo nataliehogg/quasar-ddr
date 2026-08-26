@@ -188,20 +188,17 @@ class Utilities:
     PARAM_TEMPLATE = {
         "alpha":     {"prior": {"min": -0.2, "max": 0.2}, "proposal": 0.05,  "ref_scale": 0.1,  "latex": r"\alpha"},
         "beta":      {"prior": {"min": -0.1, "max": 0.1}, "proposal": 0.005, "ref_scale": 0.05, "latex": r"\beta"},
-        "sigma_int": {"prior": {"min": 0.0,  "max": 0.5}, "proposal": 0.02,  "ref_scale": 0.05, "latex": r"\sigma_{\rm int}"},
     }
 
     @staticmethod
-    def sampler_config(dataset, likelihood, sample_sigma_int=True):
+    def sampler_config(dataset, likelihood):
         """
         Build a Cobaya `info` dictionary for sampling a mock dataset.
 
         Priors and MCMC settings are fixed; only the set of sampled parameters
         varies with the DDR violation model (M1/M3: alpha; M2: alpha, beta).
-        sigma_int is appended when `sample_sigma_int` is True. Walker starting
-        points (`ref`) are seeded at the injected fiducial truth where it is
-        known (alpha, beta from the dataset); sigma_int has no injected truth,
-        so it starts at a small interior value rather than at the prior edge.
+        Walker starting points (`ref`) are seeded at the injected fiducial
+        truth taken from the dataset.
 
         Parameters
         ----------
@@ -211,8 +208,6 @@ class Utilities:
         likelihood : class
             The Cobaya likelihood class (e.g. DDRlike). Its __name__ is used as
             the likelihood key.
-        sample_sigma_int : bool, optional
-            Whether to sample the intrinsic-scatter nuisance parameter.
 
         Returns
         -------
@@ -220,20 +215,12 @@ class Utilities:
             A Cobaya `info` dictionary ready to pass to `cobaya.run.run`.
         """
         names = list(Utilities.MODEL_PARAMS[dataset["model"]])
-        if sample_sigma_int:
-            names.append("sigma_int")
-
-        ref_truth = {
-            "alpha": dataset["alpha"],
-            "beta": dataset["beta"],
-            "sigma_int": 0.1,  # no injected truth; start inside the prior
-        }
 
         params = {}
         for name in names:
             spec = dict(Utilities.PARAM_TEMPLATE[name])
             ref_scale = spec.pop("ref_scale")
-            spec["ref"] = {"dist": "norm", "loc": ref_truth[name], "scale": ref_scale}
+            spec["ref"] = {"dist": "norm", "loc": dataset[name], "scale": ref_scale}
             params[name] = spec
 
         return {
@@ -244,7 +231,6 @@ class Utilities:
                     "external": likelihood,
                     "model": dataset["model"],
                     "datapath": "./mock_data/" + dataset["settings"],
-                    "sample_sigma_int": sample_sigma_int,
                 }
             },
             "output": "chains/" + dataset["settings"],
