@@ -9,7 +9,8 @@ class Utilities:
         r"beta(?P<beta>[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"       # Matches the beta float
         r"nQSO(?P<nQSO>\d+)"                                   # Matches the nQSO integer
         r"(?:_(?P<scenario>[A-Za-z]+))?"                       # Optional error-budget scenario
-        r"_(?P<obs>da|dl)_dataset\.txt\s*$",                   # Matches the observation type and extension
+        r"_(?:(?P<obs>da|dl)_dataset\.txt"                     # legacy text pair
+        r"|(?P<paired>paired)_dataset\.npz)\s*$",              # paired NPZ
         re.IGNORECASE,
     )
 
@@ -28,7 +29,7 @@ class Utilities:
             "n_QSO": int(data["nQSO"]),
             # Older mocks predate the scenario tag and carry no error budget
             "scenario": (data["scenario"] or "unspecified").lower(),
-            "obs": data["obs"].lower(),
+            "obs": "npz" if data["paired"] else data["obs"].lower(),
         }
 
 
@@ -40,7 +41,8 @@ class Utilities:
 
         records = []
         unmatched = []
-        for file_path in sorted(path.rglob("*.txt")):
+        candidates = sorted(list(path.rglob("*.txt")) + list(path.rglob("*.npz")))
+        for file_path in candidates:
             info = Utilities.parse_mock_filename(file_path.name)
             if info is None:
                 unmatched.append(file_path.name)
@@ -60,7 +62,7 @@ class Utilities:
             # Key updated to use alpha/beta strings
             key = (record["model"], record["subfolder"], record["alpha_str"],
                    record["beta_str"], record["n_QSO"], record["scenario"])
-            entry = index.setdefault(key, {"da": None, "dl": None})
+            entry = index.setdefault(key, {"da": None, "dl": None, "npz": None})
             entry[record["obs"]] = record["file"]
         return index, unmatched
 
