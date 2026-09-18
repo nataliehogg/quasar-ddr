@@ -1,0 +1,7 @@
+{
+  "table_schema_version": 1,
+  "csv_sha256": "6a1efa62e4a292f85c38ef9dd28a8c819c3be4eda3e0de60d93d4ce86c7b7104",
+  "reference_identifier": "test-lusso2020-table-fixture",
+  "supported_redshift_min": 0.5,
+  "supported_redshift_max": 1.5
+}

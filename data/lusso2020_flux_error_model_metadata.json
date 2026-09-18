@@ -1,0 +1,62 @@
+{
+  "builder_settings": {
+    "bandwidth_max_z": 1.0,
+    "bandwidth_min_z": 0.05,
+    "bandwidth_step_z": 0.05,
+    "float_decimal_places": 10,
+    "grid_spacing_z": 0.05,
+    "minimum_effective_count": 10.0,
+    "spread_quantiles": [
+      0.16,
+      0.84
+    ],
+    "target_effective_count": 40.0,
+    "winsor_quantiles": [
+      0.01,
+      0.99
+    ]
+  },
+  "csv_columns": [
+    "z",
+    "median_sigma_log_fuv_dex",
+    "scatter_ln_sigma_log_fuv",
+    "median_sigma_log_fx_dex",
+    "scatter_ln_sigma_log_fx",
+    "corr_ln_uncertainty_sizes",
+    "effective_reference_count",
+    "smoothing_width_z"
+  ],
+  "csv_sha256": "7748b467e10ecf5e51183922a6894d00c3753ad14711fa1b3a89527d5e8b8601",
+  "invalid_row_count": 0,
+  "invalid_row_rule": "Reject rows with missing, malformed, or non-finite required fields, or non-positive e_logFUV/e_logFX.",
+  "model_version": "lusso2020_flux_error_model_v1",
+  "reference_citation": "Lusso et al. (2020), Quasars as standard candles III, Astronomy & Astrophysics, 642, A150",
+  "reference_identifier": "J/A+A/642/A150",
+  "reference_url": "https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/A+A/642/A150",
+  "retrieval_date": "2026-07-29",
+  "source_column_mapping": {
+    "e_logFUV": {
+      "byte_range_1_indexed_inclusive": "73-79",
+      "meaning": "uncertainty in log10 F_UV",
+      "unit": "dex"
+    },
+    "e_logFX": {
+      "byte_range_1_indexed_inclusive": "95-101",
+      "meaning": "uncertainty in log10 F_X",
+      "unit": "dex"
+    },
+    "z": {
+      "byte_range_1_indexed_inclusive": "52-57",
+      "meaning": "redshift",
+      "unit": "dimensionless"
+    }
+  },
+  "source_redshift_max": 7.5413,
+  "source_redshift_min": 0.009,
+  "source_row_count": 2421,
+  "source_sha256": "a4fad96569919526c15977819c48281184e16b4837028e9972c1e56d43a4763e",
+  "supported_redshift_max": 7.5,
+  "supported_redshift_min": 0.05,
+  "table_schema_version": 1,
+  "valid_reference_row_count": 2421
+}

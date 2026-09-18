@@ -40,12 +40,14 @@ class Utilities:
 
         records = []
         unmatched = []
-        for file_path in sorted(path.glob("*.txt")):
+        for file_path in sorted(path.rglob("*.txt")):
             info = Utilities.parse_mock_filename(file_path.name)
             if info is None:
                 unmatched.append(file_path.name)
                 continue
             info["file"] = str(file_path)
+            relative_parent = file_path.parent.relative_to(path)
+            info["subfolder"] = "" if str(relative_parent) == "." else str(relative_parent)
             records.append(info)
 
         return records, unmatched
@@ -56,8 +58,8 @@ class Utilities:
         index = {}
         for record in records:
             # Key updated to use alpha/beta strings
-            key = (record["model"], record["alpha_str"], record["beta_str"],
-                   record["n_QSO"], record["scenario"])
+            key = (record["model"], record["subfolder"], record["alpha_str"],
+                   record["beta_str"], record["n_QSO"], record["scenario"])
             entry = index.setdefault(key, {"da": None, "dl": None})
             entry[record["obs"]] = record["file"]
         return index, unmatched
@@ -66,19 +68,24 @@ class Utilities:
     def list_mock_datasets(mock_dir="mock_data"):
         index, unmatched = Utilities.get_mock_index(mock_dir)
         datasets = []
-        for i, ((model, alpha_str, beta_str, n_QSO, scenario), paths) in enumerate(sorted(index.items())):
+        for i, ((model, subfolder, alpha_str, beta_str, n_QSO, scenario), paths) in enumerate(sorted(index.items())):
             suffix = "" if scenario == "unspecified" else f"_{scenario}"
+            name = f"{model}alpha{alpha_str}beta{beta_str}nQSO{n_QSO}{suffix}"
             datasets.append(
                 {
                     "index": i,
                     "model": model,
+                    "subfolder": subfolder,
                     "alpha": float(alpha_str),
                     "beta": float(beta_str),
                     "n_QSO": n_QSO,
                     "scenario": scenario,
-                    "settings": f"{model}alpha{alpha_str}beta{beta_str}nQSO{n_QSO}{suffix}",
+                    "settings": (
+                        f"{subfolder}/{name}" if subfolder else name
+                    ),
                 }
             )
+
         return datasets, unmatched
 
     @staticmethod
@@ -88,8 +95,16 @@ class Utilities:
             return
 
         for row in datasets:
-            print(f"[{row['index']}] {row['model']} α={row['alpha']} β={row['beta']} "
-                  f"n_QSO={row['n_QSO']} errors={row['scenario']}")
+            location = f"{row['subfolder']} | " if row["subfolder"] else ""
+            print(
+                f"[{row['index']}] "
+                f"{location}"
+                f"{row['model']} "
+                f"α={row['alpha']} "
+                f"β={row['beta']} "
+                f"n_QSO={row['n_QSO']} "
+                f"errors={row['scenario']}"
+            )
 
         if unmatched:
             print("\nUnmatched files:")
@@ -120,11 +135,12 @@ class Utilities:
             print("No matching mock datasets found.")
             return
 
-        for (model, alpha_str, beta_str, n_QSO, scenario), paths in sorted(index.items()):
+        for (model, subfolder, alpha_str, beta_str, n_QSO, scenario), paths in sorted(index.items()):
             da_path = paths.get("da")
             dl_path = paths.get("dl")
-            print(f"{model} α={alpha_str} β={beta_str} n_QSO={n_QSO} errors={scenario} "
-                  f"| da: {da_path} | dl: {dl_path}")
+            location = f"{subfolder} | " if subfolder else ""
+            print(f"{location}{model} α={alpha_str} β={beta_str} n_QSO={n_QSO} "
+                  f"errors={scenario} | da: {da_path} | dl: {dl_path}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -149,15 +165,17 @@ class Utilities:
             return False
 
     @staticmethod
-    def load_mock_pair(model, alpha, beta, n_QSO, mock_dir="mock_data", index=None):
+    def load_mock_pair(model, alpha, beta, n_QSO, subfolder=None, mock_dir="mock_data", index=None):
         if index is None:
             index, _ = Utilities.get_mock_index(mock_dir)
 
         model_lower = str(model).lower()
         target_n = int(n_QSO)
 
-        for (m, alpha_str, beta_str, n, _scenario), paths in index.items():
+        for (m, folder, alpha_str, beta_str, n, _scenario), paths in index.items():
             if m.lower() != model_lower:
+                continue
+            if subfolder is not None and folder != subfolder:
                 continue
             if n != target_n:
                 continue

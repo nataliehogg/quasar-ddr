@@ -1,0 +1,11 @@
+font.family: serif
+font.serif: Computer Modern, CMU Serif, DejaVu Serif
+text.usetex: False
+mathtext.fontset: cm
+axes.grid: False
+xtick.top: True
+xtick.bottom: True
+xtick.direction: in
+ytick.left: True
+ytick.right: True
+ytick.direction: in
