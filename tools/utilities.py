@@ -8,6 +8,7 @@ class Utilities:
         r"alpha(?P<alpha>[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"     # Matches the alpha float
         r"beta(?P<beta>[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"       # Matches the beta float
         r"nQSO(?P<nQSO>\d+)"                                   # Matches the nQSO integer
+        r"(?:_(?P<scenario>[A-Za-z]+))?"                       # Optional error-budget scenario
         r"_(?P<obs>da|dl)_dataset\.txt\s*$",                   # Matches the observation type and extension
         re.IGNORECASE,
     )
@@ -25,6 +26,8 @@ class Utilities:
             "beta_str": data["beta"],
             "beta": float(data["beta"]),
             "n_QSO": int(data["nQSO"]),
+            # Older mocks predate the scenario tag and carry no error budget
+            "scenario": (data["scenario"] or "unspecified").lower(),
             "obs": data["obs"].lower(),
         }
 
@@ -53,7 +56,8 @@ class Utilities:
         index = {}
         for record in records:
             # Key updated to use alpha/beta strings
-            key = (record["model"], record["alpha_str"], record["beta_str"], record["n_QSO"])
+            key = (record["model"], record["alpha_str"], record["beta_str"],
+                   record["n_QSO"], record["scenario"])
             entry = index.setdefault(key, {"da": None, "dl": None})
             entry[record["obs"]] = record["file"]
         return index, unmatched
@@ -62,7 +66,8 @@ class Utilities:
     def list_mock_datasets(mock_dir="mock_data"):
         index, unmatched = Utilities.get_mock_index(mock_dir)
         datasets = []
-        for i, ((model, alpha_str, beta_str, n_QSO), paths) in enumerate(sorted(index.items())):
+        for i, ((model, alpha_str, beta_str, n_QSO, scenario), paths) in enumerate(sorted(index.items())):
+            suffix = "" if scenario == "unspecified" else f"_{scenario}"
             datasets.append(
                 {
                     "index": i,
@@ -70,7 +75,8 @@ class Utilities:
                     "alpha": float(alpha_str),
                     "beta": float(beta_str),
                     "n_QSO": n_QSO,
-                    "settings": f"{model}alpha{alpha_str}beta{beta_str}nQSO{n_QSO}",
+                    "scenario": scenario,
+                    "settings": f"{model}alpha{alpha_str}beta{beta_str}nQSO{n_QSO}{suffix}",
                 }
             )
         return datasets, unmatched
@@ -82,7 +88,8 @@ class Utilities:
             return
 
         for row in datasets:
-            print(f"[{row['index']}] {row['model']} α={row['alpha']} β={row['beta']} n_QSO={row['n_QSO']}")
+            print(f"[{row['index']}] {row['model']} α={row['alpha']} β={row['beta']} "
+                  f"n_QSO={row['n_QSO']} errors={row['scenario']}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -113,10 +120,11 @@ class Utilities:
             print("No matching mock datasets found.")
             return
 
-        for (model, alpha_str, beta_str, n_QSO), paths in sorted(index.items()):
+        for (model, alpha_str, beta_str, n_QSO, scenario), paths in sorted(index.items()):
             da_path = paths.get("da")
             dl_path = paths.get("dl")
-            print(f"{model} α={alpha_str} β={beta_str} n_QSO={n_QSO} | da: {da_path} | dl: {dl_path}")
+            print(f"{model} α={alpha_str} β={beta_str} n_QSO={n_QSO} errors={scenario} "
+                  f"| da: {da_path} | dl: {dl_path}")
 
         if unmatched:
             print("\nUnmatched files:")
@@ -148,7 +156,7 @@ class Utilities:
         model_lower = str(model).lower()
         target_n = int(n_QSO)
 
-        for (m, alpha_str, beta_str, n), paths in index.items():
+        for (m, alpha_str, beta_str, n, _scenario), paths in index.items():
             if m.lower() != model_lower:
                 continue
             if n != target_n:

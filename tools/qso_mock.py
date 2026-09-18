@@ -9,17 +9,21 @@ class QSOMockGenerator:
     """
     Generate synchronized mock luminosity and angular diameter distance data.
 
-    Errors are fractional, following the error budget of the paper: the
-    per-object uncertainty on each distance is the quadrature sum of a
-    measurement term and an intrinsic-scatter term, both expressed as a
-    fraction of the distance itself,
+    The error budget is a natural-log scatter on each distance,
 
-        (sigma_dL / dL)^2 = sigma_dl_meas^2 + sigma_uvx^2
-        (sigma_dA / dA)^2 = sigma_da_meas^2 + sigma_sarm^2
+        sigma_ln_dl  from the UV--X-ray relation residual dispersion
+        sigma_ln_da  from the SARM residual scatter
 
-    where sigma_uvx is the residual dispersion of the UV--X-ray relation and
-    sigma_sarm the residual BLR-modelling scatter of the SARM method. The
-    stored errors are absolute (Mpc), since that is what the likelihood reads.
+    obtained from a named scenario ('current', 'future', 'targeted') via
+    QSOSpecs.error_budget, or passed explicitly. Noise is drawn
+    multiplicatively, d_obs = d_true * exp(N(0, sigma_ln)), which is what a log
+    scatter means and keeps distances positive: the 'current' budget puts
+    sigma_ln_dl near 0.69, where additive Gaussian noise would routinely give
+    negative distances.
+
+    The saved error column is sigma_ln * d_observed, i.e. the fractional
+    uncertainty on the measured distance, which is the form the likelihood
+    reads back.
 
     Parameters
     ----------
@@ -34,62 +38,68 @@ class QSOMockGenerator:
         Prefix for the saved '_dl_dataset.txt' / '_da_dataset.txt' files.
     dl_func, da_func : callable
         Fiducial luminosity and angular diameter distance functions, in Mpc.
-    sigma_dl_meas, sigma_da_meas : float
-        Fractional measurement uncertainty on d_L and d_A.
-    sigma_uvx_fid, sigma_sarm_fid : float
-        Fractional intrinsic scatter on d_L (UV--X-ray) and d_A (SARM).
+    scenario : str, optional
+        Named error budget, one of 'current', 'future', 'targeted'.
+    sigma_ln_dl, sigma_ln_da : float, optional
+        Explicit log scatters, overriding `scenario` when both are given.
+    validate : bool, optional
+        Redraw until the standardised log residuals have mean 0 and standard
+        deviation 1 to within 0.01. This makes each catalogue much closer to
+        its expectation than a real one would be, so the spread of recovered
+        parameters across catalogues is not meaningful when it is on.
     """
 
     def __init__(self, cosmoparams, specifications, z_in, outpath, dl_func, da_func,
-                 sigma_dl_meas=0.05, sigma_uvx_fid=0.05,
-                 sigma_da_meas=0.05, sigma_sarm_fid=0.05):
+                 scenario='current', sigma_ln_dl=None, sigma_ln_da=None,
+                 validate=True):
         print('Generating synchronized QSO mock datasets.')
 
         # 1. Generate a SINGLE redshift distribution for both
         self.redshifts = QSOSpecs.redshift_distribution(specifications)
         self.cosmoparams = cosmoparams
 
-        # 2. Setup theoretical functions and errors
-        # Both dl_func and da_func return distances in Mpc, so they are used
-        # as-is; the fractional errors below set the absolute error scale.
-        # Luminosity Distance setup
+        # 2. Resolve the error budget
+        if sigma_ln_dl is None or sigma_ln_da is None:
+            self.sigma_ln_dl, self.sigma_ln_da = QSOSpecs.error_budget(scenario)
+            self.scenario = scenario
+        else:
+            self.sigma_ln_dl, self.sigma_ln_da = float(sigma_ln_dl), float(sigma_ln_da)
+            self.scenario = 'custom'
+        print(f"Error budget [{self.scenario}]: "
+              f"sigma_ln_dl={self.sigma_ln_dl:.3f}, sigma_ln_da={self.sigma_ln_da:.3f}")
+
+        # 3. Setup theoretical functions
+        # Both dl_func and da_func return distances in Mpc, so they are used as-is
         self.dl_theoretical = interp1d(z_in, dl_func(z_in))
-        dl_fiducial = self.dl_theoretical(self.redshifts)
-        self.dl_error = dl_fiducial * np.sqrt(sigma_dl_meas**2 + sigma_uvx_fid**2)
-
-        # Angular Distance setup
         self.da_theoretical = da_func
-        da_fiducial = self.da_theoretical(self.redshifts)
-        self.da_error = da_fiducial * np.sqrt(sigma_da_meas**2 + sigma_sarm_fid**2)
 
-        # 3. Unified Validation Loop
-        # We ensure BOTH datasets pass the N(0,1) residual test
-        n_points = len(self.redshifts)
-        self.dl_data = np.zeros(n_points)
-        self.da_data = np.zeros(n_points)
+        # 4. Draw both datasets against the same redshifts
+        self.dl_data, self.dl_error = self._generate(
+            self.dl_theoretical, self.sigma_ln_dl, "Luminosity", validate)
+        self.da_data, self.da_error = self._generate(
+            self.da_theoretical, self.sigma_ln_da, "Angular", validate)
 
-        self._generate_validated_data(self.dl_theoretical, self.dl_error, "Luminosity", is_dl=True)
-        self._generate_validated_data(self.da_theoretical, self.da_error, "Angular", is_dl=False)
-
-        # 4. Save files
+        # 5. Save files
         self._save_data(outpath)
 
-    def _generate_validated_data(self, theory_func, error_arr, label, is_dl=True):
-        mu_res, sigma_res = 1, 3
-        data = np.zeros(len(self.redshifts))
+    def _generate(self, theory_func, sigma_ln, label, validate):
+        """Draw one dataset with multiplicative log-normal noise."""
+        truth = theory_func(self.redshifts)
 
-        while (np.abs(mu_res) > 0.01) or (np.abs(sigma_res - 1) > 0.01):
-            # Vectorized generation is faster than list comprehension
-            noise = np.random.normal(0.0, error_arr)
-            theory_vals = np.array([theory_func(zi) for zi in self.redshifts])
-            data = theory_vals + noise
-
-            residuals = (data - theory_vals) / error_arr
+        mu_res, sigma_res = 1.0, 3.0
+        while True:
+            data = truth * np.exp(np.random.normal(0.0, sigma_ln, len(truth)))
+            # Residuals are Gaussian in log space, which is where the noise lives
+            residuals = np.log(data / truth) / sigma_ln
             mu_res, sigma_res = norm.fit(residuals)
+            if not validate:
+                break
+            if (np.abs(mu_res) <= 0.01) and (np.abs(sigma_res - 1) <= 0.01):
+                break
 
-        if is_dl: self.dl_data = data
-        else: self.da_data = data
         print(f"Validated {label} residuals: mu={mu_res:.4f}, sigma={sigma_res:.4f}")
+        # Fractional uncertainty on the measured distance
+        return data, sigma_ln * data
 
     def _save_data(self, outpath):
         # 1. Extract the directory from the outpath
