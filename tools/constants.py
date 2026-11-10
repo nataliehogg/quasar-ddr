@@ -1,5 +1,5 @@
 """
-Physical constants used throughout the horizon package.
+Physical constants used throughout the quasar-ddr package.
 
 All constants are in standard cosmology units.
 """

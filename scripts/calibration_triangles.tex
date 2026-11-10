@@ -1,0 +1,46 @@
+\documentclass[border=2pt]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath,amssymb}
+\usetikzlibrary{positioning,calc,fit}
+\definecolor{odd}{HTML}{d7301f}
+\pgfdeclarelayer{lines}\pgfdeclarelayer{boxes}
+\pgfsetlayers{lines,boxes,main}
+\tikzset{
+  every node/.style={font=\small},
+  vtx/.style={inner sep=1.5pt},
+  desc/.style={inner sep=1pt, text=black!60},
+  edge/.style={line width=0.8pt, line cap=round},
+  qedge/.style={line width=1.8pt, line cap=round},
+  word/.style={inner sep=2pt},
+}
+\newcommand{\hl}[1]{\textcolor{odd}{#1}}
+% #1 quasar-edge word, #2 bottom-edge word, #3 centre label, #4 SNIa descriptor, #5 BAO descriptor
+\newcommand{\panel}[5]{%
+  \coordinate (A) at (0,3.7);      % SNIa
+  \coordinate (B) at (-2.15,0);    % SARM
+  \coordinate (C) at (2.15,0);     % BAO
+  \node[vtx] (sn)   at (A) {SNIa};
+  \node[vtx] (sarm) at (B) {SARM};
+  \node[vtx] (bao)  at (C) {BAO};
+  \node[desc, above=0pt of sn]   {$d_{\rm L}$: #4};
+  \node[desc, below=0pt of sarm] {$d_{\rm A}$: geometry};
+  \node[desc, below=0pt of bao]  {$d_{\rm A}$: #5};
+  \begin{pgfonlayer}{boxes}
+    \foreach \v in {sn,sarm,bao} \node[fill=white, inner sep=2pt, fit=(\v)] {};
+  \end{pgfonlayer}
+  \begin{pgfonlayer}{lines}
+    \draw[qedge] (B) -- (A);
+    \draw[edge]  (A) -- (C);
+    \draw[edge]  (B) -- (C);
+  \end{pgfonlayer}
+  \node[word, anchor=east] at ($(A)!0.5!(B)+(-0.12,0)$) {#1};
+  \node[word, anchor=west] at ($(A)!0.5!(C)+(0.12,0)$)  {disagree};
+  \node[word, anchor=south] at ($(B)!0.5!(C)+(0,0.06)$) {#2};
+  \node[font=\normalsize] at (0,1.25) {#3};
+}
+\begin{document}
+\begin{tikzpicture}
+  \begin{scope}\panel{agree}{disagree}{$\eta\simeq1$}{Cepheids}{\hl{sound horizon}}\end{scope}
+  \begin{scope}[xshift=7.6cm]\panel{disagree}{agree}{$\eta\simeq1\hl{{}+\alpha_0}$}{\hl{Cepheids}}{sound horizon}\end{scope}
+\end{tikzpicture}
+\end{document}

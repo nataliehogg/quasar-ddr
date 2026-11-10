@@ -672,7 +672,7 @@ def make_reference_figures(
     figure.suptitle("Lusso et al. (2020) flux-uncertainty reference")
     figure.tight_layout()
     pdf_metadata = {
-        "Creator": "Horizon deterministic Lusso table builder",
+        "Creator": "quasar-ddr deterministic Lusso table builder",
         "CreationDate": None,
         "ModDate": None,
     }
@@ -765,7 +765,7 @@ def _destination_locks(directories):
     identities = sorted(
         {str(Path(directory).resolve()) for directory in directories}
     )
-    lock_root = Path(tempfile.gettempdir()) / "horizon-lusso-builder-locks"
+    lock_root = Path(tempfile.gettempdir()) / "quasar-ddr-lusso-builder-locks"
     lock_root.mkdir(parents=True, exist_ok=True)
     handles = []
     try:
