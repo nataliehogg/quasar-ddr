@@ -25,6 +25,37 @@ class PairedQSOMock:
     seed: int | None
     errors_include_intrinsic: bool
 
+    def __post_init__(self):
+        validate_paired_mock(self)
+
+
+def validate_paired_mock(mock):
+    """Validate generated and loaded data without changing their values."""
+    z = np.asarray(mock.redshift, dtype=float)
+    if z.ndim != 1 or z.size == 0:
+        raise ValueError("redshift must be a non-empty one-dimensional array")
+    if not np.all(np.isfinite(z)) or np.any(z <= -1):
+        raise ValueError("redshift must be finite and exceed -1")
+    names = ("dl_true", "da_true", "dl_observed", "da_observed",
+             "sigma_ln_dl", "sigma_ln_da", "rho")
+    for name in names:
+        values = np.asarray(getattr(mock, name), dtype=float)
+        if values.shape != z.shape:
+            raise ValueError(f"{name} must match the redshift shape")
+        if not np.all(np.isfinite(values)):
+            raise ValueError(f"{name} must contain only finite values")
+        if name in {"dl_true", "da_true", "dl_observed", "da_observed"} and np.any(values <= 0):
+            raise ValueError(f"{name} must be strictly positive")
+        if name.startswith("sigma_") and np.any(values < 0):
+            raise ValueError(f"{name} must be non-negative")
+        if name == "rho" and np.any(np.abs(values) > 1):
+            raise ValueError("rho must lie in [-1, 1]")
+    if mock.mode not in {"asimov", "random"}:
+        raise ValueError("mode must be 'asimov' or 'random'")
+    if mock.seed is not None and (isinstance(mock.seed, (bool, np.bool_))
+            or not isinstance(mock.seed, (int, np.integer)) or mock.seed < 0):
+        raise ValueError("seed must be None or a non-negative integer")
+
 
 def generate_paired_log_mock(
     redshift,
@@ -124,6 +155,7 @@ def generate_paired_log_mock(
 
 def save_paired_log_mock(path, mock, *, flux_uncertainties=None):
     """Save a paired mock with unit-explicit log-error fields."""
+    validate_paired_mock(mock)
     arrays = {
         "redshift": mock.redshift,
         "dl_true": mock.dl_true,
@@ -166,7 +198,21 @@ def save_paired_log_mock(path, mock, *, flux_uncertainties=None):
 def load_paired_log_mock(path):
     """Load a :class:`PairedQSOMock` written by ``save_paired_log_mock``."""
     with np.load(path, allow_pickle=False) as data:
-        seed = int(data["seed"])
+        required = {"redshift", "dl_true", "da_true", "dl_observed", "da_observed",
+                    "sigma_ln_dl", "sigma_ln_da", "rho", "mode", "seed"}
+        missing = required.difference(data.files)
+        if missing:
+            raise ValueError(f"Missing paired-mock fields: {sorted(missing)}")
+        raw_seed = np.asarray(data["seed"])
+        if raw_seed.ndim != 0 or raw_seed.dtype.kind not in "iu" or int(raw_seed) < -1:
+            raise ValueError("Stored seed must be a scalar integer >= -1")
+        seed = int(raw_seed)
+        if np.asarray(data["mode"]).ndim != 0:
+            raise ValueError("Stored mode must be scalar")
+        if "errors_include_intrinsic" in data.files:
+            flag = np.asarray(data["errors_include_intrinsic"])
+            if flag.ndim != 0 or flag.dtype.kind not in "biu" or int(flag) not in (0, 1):
+                raise ValueError("errors_include_intrinsic must be a scalar boolean")
         return PairedQSOMock(
             redshift=data["redshift"].copy(),
             dl_true=data["dl_true"].copy(),

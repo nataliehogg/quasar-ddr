@@ -1,4 +1,3 @@
-import math
 import re
 from pathlib import Path
 
@@ -158,44 +157,6 @@ class Utilities:
         return {"z": data[:, 0], "value": data[:, 1], "error": data[:, 2]}
 
     @staticmethod
-    def _val_matches(val, val_str, val_float):
-        if isinstance(val, str):
-            return val == val_str
-        try:
-            return math.isclose(float(val), val_float, rel_tol=1e-9, abs_tol=0.0)
-        except (TypeError, ValueError):
-            return False
-
-    @staticmethod
-    def load_mock_pair(model, alpha, beta, n_QSO, subfolder=None, mock_dir="mock_data", index=None):
-        if index is None:
-            index, _ = Utilities.get_mock_index(mock_dir)
-
-        model_lower = str(model).lower()
-        target_n = int(n_QSO)
-
-        for (m, folder, alpha_str, beta_str, n, _scenario), paths in index.items():
-            if m.lower() != model_lower:
-                continue
-            if subfolder is not None and folder != subfolder:
-                continue
-            if n != target_n:
-                continue
-            if not Utilities._val_matches(alpha, alpha_str, float(alpha_str)):
-                continue
-            if not Utilities._val_matches(beta, beta_str, float(beta_str)):
-                continue
-
-            out = {}
-            if paths.get("da"):
-                out["da"] = Utilities.load_mock_dataset(paths["da"])
-            if paths.get("dl"):
-                out["dl"] = Utilities.load_mock_dataset(paths["dl"])
-            return out
-
-        return {}
-
-    @staticmethod
     def load_all(mock_dir="mock_data", index=None):
         if index is None:
             index, _ = Utilities.get_mock_index(mock_dir)
@@ -262,5 +223,5 @@ class Utilities:
                 }
             },
             "output": "chains/" + dataset["settings"],
-            "force": True,
+            "force": False,
         }

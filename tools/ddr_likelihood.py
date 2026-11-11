@@ -15,6 +15,10 @@ from .forecast import design_matrix
 def predict_log_eta(redshift, model, alpha=0.0, beta=0.0):
     """Predict natural-log DDR ratio for legacy and log-linear models."""
     z = np.asarray(redshift, dtype=float)
+    if not np.all(np.isfinite(z)) or np.any(z <= -1):
+        raise ValueError("redshift must be finite and exceed -1")
+    if not np.isfinite(alpha) or not np.isfinite(beta):
+        raise ValueError("DDR parameters must be finite")
     if model == "M1":
         eta = 1.0 + alpha
         if eta <= 0:

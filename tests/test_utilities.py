@@ -80,21 +80,6 @@ class MockDiscoveryTests(unittest.TestCase):
                 ],
             )
 
-    def test_load_mock_pair_filters_on_subfolder(self):
-        with tempfile.TemporaryDirectory() as directory:
-            write_legacy_text(
-                Path(directory) / "alpha" / "current", "M1alpha0.1beta0nQSO50"
-            )
-            found = Utilities.load_mock_pair(
-                "M1", 0.1, 0, 50, subfolder="alpha/current", mock_dir=directory
-            )
-            self.assertEqual(sorted(found), ["da", "dl"])
-            self.assertEqual(
-                Utilities.load_mock_pair(
-                    "M1", 0.1, 0, 50, subfolder="nowhere", mock_dir=directory
-                ),
-                {},
-            )
 
 
 class SamplerConfigTests(unittest.TestCase):

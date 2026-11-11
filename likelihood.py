@@ -52,7 +52,10 @@ class DDRlike(Likelihood):
         # which is dropped below.
         self.log_eta_obs = (np.log(mock.dl_observed) - np.log(mock.da_observed)
                             - 2*np.log1p(mock.redshift))
-        self.var_log_eta = mock.sigma_ln_dl**2 + mock.sigma_ln_da**2
+        with np.errstate(over="ignore", invalid="ignore"):
+            self.var_log_eta = mock.sigma_ln_dl**2 + mock.sigma_ln_da**2
+        if not np.all(np.isfinite(self.var_log_eta)) or np.any(self.var_log_eta <= 0):
+            raise ValueError("Each object must have finite, positive total log-distance variance")
 
     def get_requirements(self):
         """Require only the parameters this model actually samples.
@@ -86,7 +89,10 @@ class DDRlike(Likelihood):
         except ValueError:
             return -np.inf
         eta_th = TH.eta
+        if not np.all(np.isfinite(eta_th)) or np.any(eta_th <= 0):
+            return -np.inf
 
-        chi2 = np.sum((np.log(eta_th) - self.log_eta_obs)**2 / self.var_log_eta)
+        with np.errstate(over="ignore", invalid="ignore"):
+            chi2 = np.sum((np.log(eta_th) - self.log_eta_obs)**2 / self.var_log_eta)
 
         return -chi2/2

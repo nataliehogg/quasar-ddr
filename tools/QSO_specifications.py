@@ -41,7 +41,8 @@ class QSOSpecs:
 
         if 'redshifts' in specs:
             redshifts = np.asarray(specs['redshifts'], dtype=float)
-            if redshifts.ndim != 1 or redshifts.size == 0 or np.any(redshifts < 0):
+            if (redshifts.ndim != 1 or redshifts.size == 0
+                    or not np.all(np.isfinite(redshifts)) or np.any(redshifts < 0)):
                 raise ValueError("redshifts must be a non-empty non-negative array")
             return np.sort(redshifts.copy())
 
@@ -51,8 +52,12 @@ class QSOSpecs:
             raise ValueError(f"missing redshift specifications: {sorted(missing)}")
         z_min = float(specs['z_min'])
         z_max = float(specs['z_max'])
-        n_qso = int(specs['n_QSO'])
-        if z_min < 0 or z_max <= z_min or n_qso <= 0:
+        count = float(specs['n_QSO'])
+        if (isinstance(specs['n_QSO'], (bool, np.bool_))
+                or not np.isfinite(count) or not count.is_integer()):
+            raise ValueError("n_QSO must be a positive integer")
+        n_qso = int(count)
+        if not np.isfinite(z_min) or not np.isfinite(z_max) or z_min < 0 or z_max <= z_min or n_qso <= 0:
             raise ValueError("require 0 <= z_min < z_max and n_QSO > 0")
         if mode == "asimov":
             quantiles = (np.arange(n_qso, dtype=float) + 0.5) / n_qso
